@@ -23,6 +23,12 @@ void SckBase::setup()
 	// Led
 	led.setup();
 
+	sckOut("Waiting 10 seconds...");
+	led.update(led.YELLOW, led.PULSE_HARD_FAST);
+	delay(10000);
+	led.update(led.WHITE, led.PULSE_STATIC);
+	sckOut("Booting!");
+
 	// ESP Configuration
 	pinMode(pinPOWER_ESP, OUTPUT);
 	pinMode(pinESP_CH_PD, OUTPUT);
@@ -141,7 +147,11 @@ void SckBase::setup()
 
 		for (uint8_t i=0; i<SENSOR_COUNT; i++) {
 			OneSensor *wichSensor = &sensors[static_cast<SensorType>(i)];
-			if (wichSensor->enabled) urban.start(wichSensor->type);
+			if (wichSensor->enabled) {
+				sprintf(outBuff, "Starting %s sensor", wichSensor->title);
+				sckOut();
+				urban.start(wichSensor->type);
+			}
 			else urban.stop(wichSensor->type);
 		}
 
