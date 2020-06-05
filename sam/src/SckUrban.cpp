@@ -9,11 +9,22 @@ void SERCOM5_Handler() {
 
 bool SckUrban::setup()
 {
-	if (!sck_bh1730fvc.start()) return false;
-	if (!sck_sht31.start()) return false;
-	if (!sck_noise.start()) return false;
-	if (!sck_mpl3115A2.start()) return false;
-	if (!sck_ccs811.start()) return false;
+	if (!sck_bh1730fvc.start()) {
+		SerialUSB.println("Failed starting light sensor!!!");
+		return false;
+	} if (!sck_sht31.start()) {
+		SerialUSB.println("Failed starting temp/hum sensor!!!");
+		return false;
+	} if (!sck_noise.start()) {
+		SerialUSB.println("Failed starting noise sensor!!!");
+	 	return false;
+	} if (!sck_mpl3115A2.start()) {
+		SerialUSB.println("Failed starting pressure sensor!!!");
+		return false;
+	} if (!sck_ccs811.start()) {
+		SerialUSB.println("Failed starting ECO2/VOCS sensor!!!");
+		return false;
+	}
 	sck_pm.start(); // This sensor is independent of the urban board. That's way we don't declare error if it's not there.
 
 	return true;
@@ -1033,9 +1044,15 @@ bool Sck_CCS811::start()
 {
 	if (alreadyStarted) return true;
 
-	if (ccs.begin() != CCS811Core::SENSOR_SUCCESS) return false;
+	if (ccs.begin() != CCS811Core::SENSOR_SUCCESS) {
+		SerialUSB.println("CSS811 library init ERROR!!!");
+		return false;
+	}
 
-	if (ccs.setDriveMode(driveMode) != CCS811Core::SENSOR_SUCCESS) return false;
+	if (ccs.setDriveMode(driveMode) != CCS811Core::SENSOR_SUCCESS) {
+		SerialUSB.println("CSS811 library setDrive ERROR!!!");
+		return false;
+	}
 
 	startTime = rtc->getEpoch();
 	alreadyStarted = true;
