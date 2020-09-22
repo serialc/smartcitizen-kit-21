@@ -747,20 +747,16 @@ void Groove_OLED::update(SckBase* base, bool force)
 	// Info bar
 	drawBar(base);
 
-	if (base->st.error == ERROR_NONE) {
+	// Setup mode screen
+	if (base->st.onSetup) drawSetup(base);
+	else displayReading(base);
 
-		// Setup mode screen
-		if (base->st.onSetup) drawSetup(base);
-		else displayReading(base);
-
-	} else {
-
-		// Error popup
-		drawError(base->st.error);
-
-	}
-
+	if (base->st.error != ERROR_NONE) drawError(base->st.error);
+	
 	lastError = base->st.error;
+
+	// Update display (except infobar)
+	u8g2_oled.updateDisplayArea(0, 2, 16, 14);
 }
 
 void Groove_OLED::drawBar(SckBase* base)
@@ -830,8 +826,6 @@ void Groove_OLED::drawBar(SckBase* base)
 
 void Groove_OLED::drawError(errorType wichError)
 {
-	if (lastError == wichError) return;
-
 	// Clear error buffer area
 	uint8_t *buffStart = u8g2_oled.getBufferPtr();
 	memset(&buffStart[1792], 0, 256);
@@ -882,9 +876,6 @@ void Groove_OLED::drawError(errorType wichError)
 
 	// Print message
 	u8g2_oled.drawStr(19, 125, errorMsg);
-
-	// Update display
-	u8g2_oled.updateDisplayArea(0, 14, 16, 2);
 }
 
 void Groove_OLED::drawSetup(SckBase* base)
@@ -911,8 +902,6 @@ void Groove_OLED::drawSetup(SckBase* base)
 	u8g2_oled.drawStr((128 - u8g2_oled.getStrWidth(conn4)) / 2, font_h + 104, conn4);
 	char conn5[] = "or 192.168.1.1";
 	u8g2_oled.drawStr((128 - u8g2_oled.getStrWidth(conn5)) / 2, font_h + 116, conn5);
-
-	u8g2_oled.updateDisplayArea(0, 2, 16, 14);
 }
 
 void Groove_OLED::displayReading(SckBase* base)
@@ -999,9 +988,6 @@ void Groove_OLED::displayReading(SckBase* base)
 	} else {
 		u8g2_oled.drawStr((128 - u8g2_oled.getStrWidth(value.c_str())) / 2, vCenter + (u8g2_oled.getMaxCharHeight() / 2), value.c_str());
 	}
-
-
-	u8g2_oled.updateDisplayArea(0, 2, 16, 14);
 
 	lastShown = sensorToShow;
 	showStartTime = base->rtc.getEpoch();
