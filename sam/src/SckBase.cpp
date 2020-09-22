@@ -813,7 +813,7 @@ bool SckBase::sendConfig()
 	else json["ac"] = (uint8_t)ESPMES_START_AP;
 
 	sprintf(netBuff, "%c", ESPMES_SET_CONFIG);
-	serializeJson(json, &netBuff[1], json.memoryUsage() + 1);
+	serializeJson(json, &netBuff[1], NETBUFF_SIZE);
 
 	if (sendMessage()) {
 		pendingSyncConfig = false;
@@ -862,7 +862,7 @@ bool SckBase::publishInfo()
 		json["esp_bd"] = ESPbuildDate.c_str();
 
 		sprintf(netBuff, "%c", ESPMES_MQTT_INFO);
-		serializeJson(json, &netBuff[1], json.memoryUsage() + 1);
+		serializeJson(json, &netBuff[1], NETBUFF_SIZE);
 		if (sendMessage()) return true;
 	}
 	return false;
@@ -1020,7 +1020,9 @@ bool SckBase::sendMessage()
 	if (config.debug.esp) {
 		sprintf(outBuff, "Sending msg to ESP with %i parts and %i bytes", totalParts, totalSize);
 		sckOut();
+		sckOut(netBuff);
 	}
+
 
 	for (uint8_t i=0; i<totalParts; i++) {
 		netPack[0] = totalParts;
@@ -1032,6 +1034,8 @@ bool SckBase::sendMessage()
 		if (config.debug.esp) {
 			sprintf(outBuff, "Sent part num %i", i);
 			sckOut();
+			for(uint16_t i=0; i<NETPACK_TOTAL_SIZE; i++) SerialUSB.print((char)netPack[i]);
+			SerialUSB.println("");
 		}
 	}
 	return true;
@@ -1226,7 +1230,7 @@ void SckBase::mqttCustom(const char *topic, const char *payload)
 	json["pl"] = payload;
 
 	sprintf(netBuff, "%c", ESPMES_MQTT_CUSTOM);
-	serializeJson(json, &netBuff[1], json.memoryUsage() + 1);
+	serializeJson(json, &netBuff[1], NETBUFF_SIZE);
 
 	if (sendMessage()) sckOut("MQTT message sent to ESP...", PRIO_LOW);
 }
