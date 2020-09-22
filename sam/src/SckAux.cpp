@@ -760,6 +760,7 @@ void Groove_OLED::update(SckBase* base, bool force)
 
 	}
 
+	lastError = base->st.error;
 }
 
 void Groove_OLED::drawBar(SckBase* base)
@@ -881,8 +882,6 @@ void Groove_OLED::drawError(errorType wichError)
 
 	// Print message
 	u8g2_oled.drawStr(19, 125, errorMsg);
-
-	lastError = wichError;
 
 	// Update display
 	u8g2_oled.updateDisplayArea(0, 14, 16, 2);

@@ -26,16 +26,24 @@ enum PrioLevels { PRIO_LOW, PRIO_MED, PRIO_HIGH };
 
 enum errorType { 
 	ERROR_NONE, 
-	ERROR_SD, 
-	ERROR_SD_PUBLISH, 
+
+	// We cannot take readings we go to sleep and give feedback once a minute
+	ERROR_BATT, 
+
+	// We cannot take readings (we don't go to sleep)
 	ERROR_TIME, 
-	ERROR_NO_WIFI_CONFIG, 
-	ERROR_AP, 
-	ERROR_PASS, 
-	ERROR_WIFI_UNKNOWN, 
-	ERROR_MQTT, 
-	ERROR_NO_TOKEN_CONFIG, 
-	ERROR_BATT 
+
+	// We are taking readings but we cannot publish them
+		// User intervention needed
+		ERROR_NO_WIFI_CONFIG, 
+		ERROR_NO_TOKEN_CONFIG, 
+		ERROR_PASS, 
+		ERROR_SD, 
+		ERROR_SD_PUBLISH, 
+		// User intervention not always needed (depending on error origin)
+		ERROR_AP, 
+		ERROR_WIFI_UNKNOWN, 
+		ERROR_MQTT
 };
 
 struct SensorConfig { bool enabled; uint8_t everyNint; bool oled_display=false; };
@@ -60,6 +68,6 @@ struct Configuration {
 	uint8_t outLevel = OUT_NORMAL;
 	BattConf battConf;
 	Extra extra;
-	uint16_t sleepTimer = 30; 					// Sleep after this amount of minutes, 480 minutes max (0 to disable sleep)
+	uint16_t sleepTimer = 3; 					// Sleep after this amount of minutes, 480 minutes max (0 to disable sleep)
 	Offline offline;
 };

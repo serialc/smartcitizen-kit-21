@@ -11,6 +11,50 @@ void SckLed::setup()
 	pulseMode = PULSE_STATIC;
 	tick();
 }
+void SckLed::update(errorType wichError, SCKmodes wichMode, bool onSetup)
+{
+	switch (wichError) {
+
+		case ERROR_BATT: // TODO check if this feedback is understandable by the user
+		case ERROR_NONE:
+			if (onSetup) update(RED, PULSE_SOFT);
+			else {
+				switch (wichMode) {
+
+					case MODE_NOT_CONFIGURED:
+					case MODE_NET:
+						update(BLUE, PULSE_SOFT);
+						break;
+
+					case MODE_SD:
+						update(PINK, PULSE_SOFT);
+						break;
+
+					default:
+						break;
+				}
+			}
+			break;
+
+		case ERROR_TIME: 
+			update(YELLOW, PULSE_HARD_FAST);
+			break;
+
+		case ERROR_NO_WIFI_CONFIG: 
+		case ERROR_NO_TOKEN_CONFIG: 
+		case ERROR_PASS: 
+		case ERROR_SD: 
+		case ERROR_SD_PUBLISH: 
+		case ERROR_AP: 
+		case ERROR_WIFI_UNKNOWN: 
+		case ERROR_MQTT:
+			update(YELLOW, PULSE_STATIC);
+			break;
+
+		default:
+			break;
+	}
+}
 void SckLed::update(ColorName colorName, pulseModes pulse, bool force)
 {
 	
@@ -83,6 +127,14 @@ void SckLed::tick()
 		}
 		blinkON = !blinkON;
 	}
+}
+void SckLed::setColor(ColorName wichColorName)
+{
+	Color wichColor = colors[wichColorName];
+	disableTimer5();
+	analogWrite(pinRED, 255 - wichColor.r);
+	analogWrite(pinGREEN, 255 - wichColor.g);
+	analogWrite(pinBLUE, 255 - wichColor.b);
 }
 void SckLed::off()
 {

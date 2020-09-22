@@ -296,6 +296,8 @@ void SckBase::reviewState()
 	/* sdDetect() */
 	/* buttonEvent(); */
 
+	led.update(st.error, st.mode, st.onSetup);
+
 	if (st.onShell) {
 
 	} else if (st.onSetup) {
@@ -313,7 +315,6 @@ void SckBase::reviewState()
 			if (!st.wifiStat.error) {
 				sckOut("ERROR wifi is not configured!!!");
 				ESPcontrol(ESP_OFF);
-				led.update(led.BLUE, led.PULSE_HARD_FAST);
 				st.error = ERROR_NO_WIFI_CONFIG;
 				st.wifiStat.error = true;
 			}
@@ -325,7 +326,6 @@ void SckBase::reviewState()
 			if (!st.tokenError) {
 				sckOut("ERROR token is not configured!!!");
 				ESPcontrol(ESP_OFF);
-				led.update(led.BLUE, led.PULSE_HARD_FAST);
 				st.error = ERROR_NO_TOKEN_CONFIG;
 				st.tokenError = true;
 			}
@@ -344,7 +344,6 @@ void SckBase::reviewState()
 					int8_t thisHour = rtc.getHours();
 					if (thisHour > config.offline.start && thisHour < config.offline.end) {
 						if (st.espON) ESPcontrol(ESP_OFF);
-						led.update(led.BLUE, led.PULSE_SOFT);
 						offlineHours = true;
 					}
 				}
@@ -363,10 +362,9 @@ void SckBase::reviewState()
 						if (st.lastWiFiError == 0) {
 
 							ESPcontrol(ESP_OFF); 				// Save battery
-							st.lastWiFiError = now; 		// Start counting time
+							st.lastWiFiError = now; 			// Start counting time
 							st.wifiErrorCounter++; 				// Count errors
 							sckOut("ERROR Can't publish without wifi!!!"); 	// User feedback
-							led.update(led.BLUE, led.PULSE_HARD_FAST);
 						}
 
 						else if (	(now - st.lastWiFiError) > config.offline.retry || 	// Enough time has passed to try again
@@ -379,14 +377,10 @@ void SckBase::reviewState()
 							st.wifiStat.reset();
 							sckOut("Retrying WiFi..."); 	// User feedback
 						}
-
-						// ERROR feedback should be on just for a limited amount of time, let's turn it off
-						else if (now - st.lastWiFiError > 10) led.update(led.BLUE, led.PULSE_SOFT);
 					}
 				}
 			} else {
 
-				led.update(led.BLUE, led.PULSE_SOFT);
 				st.wifiErrorCounter = 0;
 				st.error = ERROR_NONE;
 
@@ -401,7 +395,6 @@ void SckBase::reviewState()
 						sckOut("ERROR sending hello!!!");
 
 						ESPcontrol(ESP_REBOOT); 		// Try reseting ESP
-						led.update(led.BLUE, led.PULSE_HARD_FAST);
 						st.error = ERROR_MQTT;
 
 						st.helloStat.reset();
@@ -418,7 +411,6 @@ void SckBase::reviewState()
 						sckOut("ERROR getting time from the network!!!");
 
 						ESPcontrol(ESP_REBOOT);
-						led.update(led.BLUE, led.PULSE_HARD_FAST);
 						st.error = ERROR_TIME;
 
 						st.timeStat.reset();
@@ -435,7 +427,7 @@ void SckBase::reviewState()
 						sckOut("ERROR sending kit info to platform!!!");
 						infoPublished = true; 		// We will try on next reset
 						st.infoStat.reset();
-						st.error = ERROR_MQTT;
+						/* st.error = ERROR_MQTT; */
 
 					}
 
@@ -464,7 +456,6 @@ void SckBase::reviewState()
 						// Forget the index of the group we tried to publish
 						wichGroupPublishing.group = -1;
 
-						led.update(led.BLUE, led.PULSE_HARD_FAST);
 						st.error = ERROR_MQTT;
 
 						ESPcontrol(ESP_OFF);
@@ -477,40 +468,16 @@ void SckBase::reviewState()
 					}
 				}
 			}
-		} else {
-			uint16_t sleepPeriod = 3; 											// Only sleep if
-			while ( 	(config.readInterval - (rtc.getEpoch() - lastSensorUpdate) > (uint32_t)(sleepPeriod + 1)) && 	// No publish in the near future
-					(pendingSensorsLinkedList.size() == 0) && 							// No sensor to wait to
-					(st.timeStat.ok) && 										// RTC is synced and working
-					((millis() - lastUserEvent) > (config.sleepTimer * 60000)) && 					// No recent user interaction (button, sdcard or USB events)
-					(config.sleepTimer > 0)) { 									// sleep is enabled
-
-				goToSleep(sleepPeriod * 1000);
-
-				// Let the led be visible for one instant (and start breathing if we need to read sensors)
-				led.update(led.BLUE2, led.PULSE_STATIC, true);
-				delay(10);
-				led.update(led.BLUE, led.PULSE_SOFT, true);
-
-				updateSensors();
-				updatePower();
-
-				// If we have a screen update it
-				if (sensors[SENSOR_GROVE_OLED].enabled) auxBoards.updateDisplay(this, true);
-			}
-
-			led.update(led.BLUE, led.PULSE_SOFT);
-			st.error = ERROR_NONE;
-			updateSensors();
-
 		}
+
+		sleepLoop();
+
 	} else if  (st.mode == MODE_SD) {
 
 		if (!st.cardPresent) {
 			if (!st.cardPresentError) {
 				sckOut("ERROR can't find SD card!!!");
 				if (st.espON) ESPcontrol(ESP_OFF);
-				led.update(led.PINK, led.PULSE_HARD_FAST);
 				st.error = ERROR_SD;
 				st.cardPresentError = true;
 			}
@@ -523,7 +490,6 @@ void SckBase::reviewState()
 				if (!st.wifiStat.error) {
 					sckOut("ERROR time is not synced and no wifi set!!!");
 					ESPcontrol(ESP_OFF);
-					led.update(led.PINK, led.PULSE_HARD_FAST);
 					st.wifiStat.error = true;
 				}
 			} else {
@@ -538,7 +504,6 @@ void SckBase::reviewState()
 						sckOut("ERROR time is not synced!!!");
 
 						ESPcontrol(ESP_OFF);
-						led.update(led.PINK, led.PULSE_HARD_FAST);
 						st.error = ERROR_TIME;
 						st.wifiStat.reset();
 					}
@@ -555,40 +520,19 @@ void SckBase::reviewState()
 						sckOut("ERROR time sync failed!!!");
 						st.timeStat.reset();
 						ESPcontrol(ESP_OFF);
-						led.update(led.PINK, led.PULSE_HARD_FAST);
 						st.error = ERROR_TIME;
 					}
 				}
 			}
 
 		} else {
-			uint16_t sleepPeriod = 3; 											// Only sleep if
-			while ( 	(config.readInterval - (rtc.getEpoch() - lastSensorUpdate) > (uint32_t)(sleepPeriod + 1)) && 	// No publish in the near future
-					(pendingSensorsLinkedList.size() == 0) && 							// No sensor to wait to
-					(st.timeStat.ok) && 										// RTC is synced and working
-					((millis() - lastUserEvent) > (config.sleepTimer * 60000)) && 					// No recent user interaction (button, sdcard or USB events)
-					(config.sleepTimer > 0)) { 									// sleep is enabled
 
-				goToSleep(sleepPeriod * 1000);
-
-				// Let the led be visible for one instant (and start breathing if we need to read sensors)
-				led.update(led.PINK2, led.PULSE_STATIC, true);
-				delay(10);
-				led.update(led.PINK, led.PULSE_SOFT, true);
-
-				updateSensors();
-				updatePower();
-
-				// If we have a screen update it
-				if (sensors[SENSOR_GROVE_OLED].enabled) auxBoards.updateDisplay(this, true);
-			}
-
-			led.update(led.PINK, led.PULSE_SOFT);
 			st.error = ERROR_NONE;
 			updateSensors();
 
 			if (st.espON && !pendingSyncConfig) ESPcontrol(ESP_OFF);
 		}
+		sleepLoop();
 	}
 }
 void SckBase::enterSetup()
@@ -597,8 +541,8 @@ void SckBase::enterSetup()
 	st.onSetup = true;
 
 	// Update led
-	led.update(led.RED, led.PULSE_SOFT);
 	st.error = ERROR_NONE;
+	led.update(st.error, st.mode, st.onSetup);
 
 	// Clear errors from other modes
 	st.tokenError = false;
@@ -813,7 +757,7 @@ void SckBase::saveConfig(bool defaults)
 			infoPublished = false;
 			st.helloPending = true;
 			st.onSetup = false;
-			led.update(led.BLUE, led.PULSE_SOFT);
+			/* led.update(led.BLUE, led.PULSE_SOFT); */
 			st.error = ERROR_NONE;
 			sendMessage(ESPMES_STOP_AP, "");
 
@@ -822,7 +766,7 @@ void SckBase::saveConfig(bool defaults)
 			if (!st.wifiSet) sckOut("ERROR Wifi not configured: can't set Network Mode!!!");
 			if (!st.tokenSet) sckOut("ERROR Token not configured: can't set Network Mode!!!");
 			ESPcontrol(ESP_OFF);
-			led.update(led.BLUE, led.PULSE_HARD_FAST);
+			/* led.update(led.BLUE, led.PULSE_HARD_FAST); */
 			st.error = ERROR_NO_WIFI_CONFIG;
 		}
 
@@ -830,11 +774,13 @@ void SckBase::saveConfig(bool defaults)
 
 		st.helloPending = false;
 		st.onSetup = false;
-		led.update(led.PINK, led.PULSE_SOFT);
+		/* led.update(led.PINK, led.PULSE_SOFT); */
 		sendMessage(ESPMES_STOP_AP, "");
 		st.error = ERROR_NONE;
 
 	}
+
+	led.update(st.error, st.mode, st.onSetup);
 
 	if (pendingSyncConfig && !st.espON) ESPcontrol(ESP_ON);
 }
@@ -1371,7 +1317,7 @@ void SckBase::sck_reset()
 }
 void SckBase::goToSleep(uint32_t sleepPeriod)
 {
-	led.off();
+	/* led.off(); */
 	if (st.espON) ESPcontrol(ESP_OFF);
 
 	// ESP control pins savings
@@ -1505,6 +1451,9 @@ void SckBase::updatePower()
 			led.chargeStatus = led.CHARGE_NULL;
 		}
 	}
+
+	// Don't bother user with charge blinks while he is operating the kit
+	if ((millis() - lastUserEvent) < 5000) led.chargeStatus = led.CHARGE_NULL;
 }
 void SckBase::configGCLK6()
 {
@@ -1526,7 +1475,35 @@ void SckBase::configGCLK6()
 
 	NVMCTRL->CTRLB.bit.SLEEPPRM = NVMCTRL_CTRLB_SLEEPPRM_DISABLED_Val;
 }
+void SckBase::sleepLoop()
+{
+	uint16_t sleepPeriod = 3; 											// Only sleep if
+	while ( 	(config.readInterval - (rtc.getEpoch() - lastSensorUpdate) > (uint32_t)(sleepPeriod + 1)) && 	// No readings to take in the near future
+			!timeToPublish && 										// We don't need to publish yet
+			(pendingSensorsLinkedList.size() == 0) && 							// No sensor to wait to
+			(st.timeStat.ok) && 										// RTC is synced and working
+			((millis() - lastUserEvent) > (config.sleepTimer * 60000)) && 					// No recent user interaction (button, sdcard or USB events)
+			(config.sleepTimer > 0)) { 									// sleep is enabled
 
+		if (st.error <= 1) led.off();
+		goToSleep(sleepPeriod * 1000);
+
+		// Let the led be visible for one instant (and start breathing if we need to read sensors)
+		if (st.error > 1) led.setColor(led.YELLOW_LIGHT);
+		else if (st.mode == MODE_NET) led.setColor(led.BLUE_LIGHT);
+		else led.setColor(led.PINK_LIGHT);
+		delay(15);
+		/* led.update(st.error, st.mode, st.onSetup); */
+
+		updateSensors();
+		updatePower();
+
+		// If we have a screen update it
+		if (sensors[SENSOR_GROVE_OLED].enabled) auxBoards.updateDisplay(this, true);
+	}
+
+	updateSensors();
+}
 
 // **** Sensors
 void SckBase::updateSensors()
@@ -1539,6 +1516,7 @@ void SckBase::updateSensors()
 	if (!st.timeStat.ok) return;
 	if (st.onSetup) return;
 	if (st.mode == MODE_SD && !st.cardPresent) return; // TODO this should be removed when flash memory is implemented
+
 
 	// Speed based interval
 	// TODO in dynamic mode PMS sensor should not use oneShot mode
@@ -1555,6 +1533,9 @@ void SckBase::updateSensors()
 	if ((st.dynamic && (timeSinceLastSensorUpdate >= dynamicInterval)) || timeSinceLastSensorUpdate >= config.readInterval) {
 
 		lastSensorUpdate = rtc.getEpoch();
+
+		// Led should show that we are taking readings
+		led.update(st.error, st.mode, st.onSetup);
 
 		sckOut("\r\n-----------");
 		epoch2iso(lastSensorUpdate, ISOtimeBuff);
@@ -1885,7 +1866,9 @@ bool SckBase::sdPublish()
 	}
 
 	sckOut("ERROR failed publishing to SD card");
-	led.update(led.PINK, led.PULSE_HARD_FAST);
+	/* led.update(led.PINK, led.PULSE_HARD_FAST); */
+	st.error = ERROR_SD_PUBLISH;
+	led.update(st.error, st.mode, st.onSetup);
 	return false;
 }
 

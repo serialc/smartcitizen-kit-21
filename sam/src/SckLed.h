@@ -2,25 +2,25 @@
 
 #include <Arduino.h>
 #include "Pins.h"
+#include "Config.h"
 
 class SckLed
 {
 public:
 
 	enum ColorName {
-		RED,
-		GREEN,
-		BLUE,
-		LIGHT_GREEN,
-		LIGHT_BLUE,
-		PINK,
-		YELLOW,
-		ORANGE,
-		WHITE,
+		RED,		
+		RED_LIGHT,	
+		GREEN,		
+		BLUE,		
+		BLUE_LIGHT,	
+		PINK,		
+		PINK_LIGHT,	
+		YELLOW,	
+		YELLOW_LIGHT,	
+		ORANGE,	
+		WHITE,		
 		BLACK,
-		RED2,
-		BLUE2,
-		PINK2,
 		COLOR_COUNT
 	};
 	struct Color { uint8_t r; uint8_t g; uint8_t b; ColorName name; };
@@ -42,6 +42,8 @@ public:
 
 	void setup();
 	void update(ColorName colorName, pulseModes pulse, bool force=false);
+	void update(errorType wichError, SCKmodes wichMode, bool onSetup);
+	void setColor(ColorName wichColorName);
 	void off();
 	void tick();
 
@@ -56,18 +58,17 @@ private:
 
 	const Color colors[COLOR_COUNT] = {
 		{250,	4,	0, 	RED},		// RED
+		{255,	10,	0, 	RED_LIGHT},	// RED_LIGHT
 		{0, 	254, 	0, 	GREEN},		// GREEN
 		{0, 	29, 	225, 	BLUE},		// BLUE
-		{0, 	254, 	50, 	LIGHT_GREEN},	// LIGHT_GREEN
-		{0, 	29, 	254, 	LIGHT_BLUE},	// LIGHT_BLUE
+		{0, 	39, 	255, 	BLUE_LIGHT},	// BLUE_LIGHT
 		{129, 	12, 	112, 	PINK},		// PINK
+		{149, 	22, 	132, 	PINK_LIGHT},	// PINK_LIGHT
 		{154, 	100,	0, 	YELLOW},	// YELLOW
+		{164, 	110,	0, 	YELLOW_LIGHT},	// YELLOW_LIGHT
 		{235, 	30,	0, 	ORANGE},	// ORANGE
 		{254,	254,	254, 	WHITE},		// WHITE
 		{0,	0,	0, 	BLACK},		// BLACK
-		{255,	10,	0, 	RED2},		// RED2
-		{0, 	39, 	255, 	BLUE2},		// BLUE2
-		{149, 	22, 	132, 	PINK2},		// PINK2
 	};
 
 	// Color fades
