@@ -43,7 +43,9 @@
 // Librtary for XA1110 Sparkfun i2c GPS
 #include <SparkFun_I2C_GPS_Arduino_Library.h>
 
-// Library for SparkFun u-Blox NEO-M8U GPS
+// Library for SparkFun u-Blox GNSS breakout boards:
+// GPS-RTK2-ZED-F9P, GPS-RTK-NEO-M8P-2, ZOE-M8Q, SAM-M8Q, NEO-M9N
+// See: https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library
 #ifdef ID
 #undef ID 	// Fix conflict with define on SPIMemory.h
 #endif
@@ -607,6 +609,21 @@ class NEOM8UGPS: public GPS_Source
 		SFE_UBLOX_GNSS ubloxGps;
 		uint32_t lastReading = 0;
 
+};
+
+class SAMM8QGPS: public GPS_Source
+{
+	public:
+		const byte deviceAddress = 0x42;
+
+		bool start();
+		virtual bool stop();
+		virtual bool getReading(SensorType wichSensor, GpsReadings &r);
+		virtual bool update();
+
+	private:
+		SFE_UBLOX_GNSS ubloxGps;
+		uint32_t lastReading = 0;
 };
 
 class Sck_DallasTemp
