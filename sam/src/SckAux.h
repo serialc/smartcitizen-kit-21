@@ -169,7 +169,7 @@ class AuxBoards
 
 			0x02, 			// SENSOR_GPS_* Grove Gps (on PM board)
 			0x10, 			// SENSOR_GPS_* XA111 Gps
-			0x42, 			// SENSOR_GPS_* NEO-M8U Gps
+			0x42, 			// SENSOR_GPS_* Sparkfun u-blox GNSS
 
 			0x3c,			// SENSOR_GROOVE_OLED,
 
@@ -595,7 +595,7 @@ class XA111GPS: public GPS_Source
 
 };
 
-class NEOM8UGPS: public GPS_Source
+class SFUBLOXGNSS: public GPS_Source
 {
 	public:
 		const byte deviceAddress = 0x42;
@@ -606,23 +606,7 @@ class NEOM8UGPS: public GPS_Source
 		virtual bool update();
 
 	private:
-		SFE_UBLOX_GNSS ubloxGps;
-		uint32_t lastReading = 0;
-
-};
-
-class SAMM8QGPS: public GPS_Source
-{
-	public:
-		const byte deviceAddress = 0x42;
-
-		bool start();
-		virtual bool stop();
-		virtual bool getReading(SensorType wichSensor, GpsReadings &r);
-		virtual bool update();
-
-	private:
-		SFE_UBLOX_GNSS ubloxGps;
+		SFE_UBLOX_GNSS ubloxGNSS;
 		uint32_t lastReading = 0;
 };
 

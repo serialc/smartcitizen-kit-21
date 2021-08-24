@@ -20,8 +20,7 @@ Sck_BME680 		bme680;
 Sck_GPS 		gps;
 PM_Grove_GPS 		pmGroveGps;
 XA111GPS 		xa1110gps;
-NEOM8UGPS 		neoM8uGps;
-SAMM8QGPS     samM8qGps;
+SFUBLOXGNSS 		 sfubloxGnss;
 Sck_ADS1X15 		ads48;
 Sck_ADS1X15 		ads49;
 Sck_ADS1X15 		ads4A;
@@ -1823,8 +1822,8 @@ bool Sck_GPS::start()
 {
 	if (started) return true;
 
-	if (neoM8uGps.start()) {
-		gps_source = &neoM8uGps;
+	if (sfubloxGnss.start()) {
+		gps_source = &sfubloxGnss;
 		started = true;
 		return true;
 	}
@@ -2074,58 +2073,71 @@ bool XA111GPS::update()
 	return true;
 }
 
-bool NEOM8UGPS::start()
+bool SFUBLOXGNSS::start()
 {
+
 	if (!I2Cdetect(&auxWire, deviceAddress)) return false;
 
-	if (!ubloxGps.begin(auxWire)) return false;
+  SerialUSB.println("UBLOX GNSS start");
 
-	ubloxGps.setUART1Output(0); 		// Disable the UART1 port output 
-	ubloxGps.setUART2Output(0); 		// Disable Set the UART2 port output
-	ubloxGps.setI2COutput(COM_TYPE_UBX); 	// Set the I2C port to output UBX only (turn off NMEA noise)
-	ubloxGps.setNavigationFrequency(4);
-	ubloxGps.setAutoPVT(true); 		// Tell the GPS to "send" each solution
-	ubloxGps.saveConfiguration(); 		// Save the current settings to flash and BBR
+	if (!ubloxGNSS.begin(auxWire)) return false;
+
+	ubloxGNSS.setUART1Output(0); 		// Disable the UART1 port output 
+	ubloxGNSS.setUART2Output(0); 		// Disable the UART2 port output
+
+	ubloxGNSS.setI2COutput(COM_TYPE_UBX); 	// Set the I2C port to output UBX only (turn off NMEA noise)
+	ubloxGNSS.setNavigationFrequency(4);  // number of measurements per second
+  ubloxGNSS.setAutoPVT(true); 		// Tell the GPS to "send" each solution - PVT = Postion, Velocity, Time
+	ubloxGNSS.saveConfiguration(); 		// Save the current settings to flash and BBR
 
 	return true;
 }
 
-bool NEOM8UGPS::stop()
+bool SFUBLOXGNSS::stop()
 {
+  SerialUSB.println("UBLOX GNSS stop");
+
 	// TODO
+  // For implementation example see:
+  // https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/64ba65029c6d8400f8b0bdb976c3f36888c74d18/examples/Example18_PowerSaveMode/Example18_PowerSaveMode.ino
 	// Lowpower mode
 	return true;
 }
 
-bool NEOM8UGPS::getReading(SensorType whichSensor, GpsReadings &r)
+bool SFUBLOXGNSS::getReading(SensorType whichSensor, GpsReadings &r)
 {
+
 	if (!I2Cdetect(&auxWire, deviceAddress)) return false;
 
+  //SerialUSB.println("UBLOX GNSS get reading");
+  //SerialUSB.println(whichSensor);
+
+  // call to getReading (SckBase.cpp) specifies which reading (e.g., lat/lng, time, fix) to retrieve
 	switch(whichSensor) {
 
 		case SENSOR_GPS_FIX_QUALITY:
 		{
 
 			// Time
-			if (ubloxGps.getDateValid() && ubloxGps.getTimeValid()) {
+			if (ubloxGNSS.getDateValid() && ubloxGNSS.getTimeValid()) {
 				// Time (epoch) -> uint32 - 4
 				struct tm tm; 					// http://www.nongnu.org/avr-libc/user-manual/structtm.html
 				tm.tm_isdst = -1; 				// -1 means no data available
 				tm.tm_yday = 0;
 				tm.tm_wday = 0;
-				tm.tm_year = ubloxGps.getYear() - 1900; 	// tm struct expects years since 1900
-				tm.tm_mon = ubloxGps.getMonth() - 1; 		// tm struct uses 0-11 months
-				tm.tm_mday = ubloxGps.getDay();
-				tm.tm_hour = ubloxGps.getHour();
-				tm.tm_min = ubloxGps.getMinute();
-				tm.tm_sec = ubloxGps.getSecond();
+				tm.tm_year = ubloxGNSS.getYear() - 1900; 	// tm struct expects years since 1900
+				tm.tm_mon = ubloxGNSS.getMonth() - 1; 		// tm struct uses 0-11 months
+				tm.tm_mday = ubloxGNSS.getDay();
+				tm.tm_hour = ubloxGNSS.getHour();
+				tm.tm_min = ubloxGNSS.getMinute();
+				tm.tm_sec = ubloxGNSS.getSecond();
 				r.timeValid = true;
 				r.epochTime = mktime(&tm);
 			} else {
 				r.timeValid = false;
 			}
 
-			uint8_t fixQual = ubloxGps.getFixType(); 		// Type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning */
+			uint8_t fixQual = ubloxGNSS.getFixType(); 		// Type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning */
 			// TODO
 			// Translate fix quality to NMEA standard
 			r.fixQuality = fixQual;
@@ -2138,9 +2150,9 @@ bool NEOM8UGPS::getReading(SensorType whichSensor, GpsReadings &r)
 			// Location
 			r.locationValid = true;
 			// Latitude
-			r.latitude = (float)ubloxGps.getLatitude() / 10000000.0;
+			r.latitude = (float)ubloxGNSS.getLatitude() / 10000000.0;
 			// Longitude
-			r.longitude = (float)ubloxGps.getLongitude() / 10000000.0;
+			r.longitude = (float)ubloxGNSS.getLongitude() / 10000000.0;
 			break;
 		}
 		case  SENSOR_GPS_ALTITUDE:
@@ -2148,28 +2160,28 @@ bool NEOM8UGPS::getReading(SensorType whichSensor, GpsReadings &r)
 			// Altitude
 			// TODO check if main sea level option (getAltitudeMSL()) is better for us
 			r.altitudeValid = true;
-			r.altitude = (float)ubloxGps.getAltitude() / 1000.0;
+			r.altitude = (float)ubloxGNSS.getAltitude() / 1000.0;
 			break;
 		}
 		case SENSOR_GPS_SPEED:
 		{
 			// Speed
 			r.speedValid = true;
-			r.speed = (float)ubloxGps.getGroundSpeed() / 1000.0;
+			r.speed = (float)ubloxGNSS.getGroundSpeed() / 1000.0;
 			break;
 		}
 		case SENSOR_GPS_HDOP:
 		{
 			// Horizontal dilution of position
 			r.hdopValid = true;
-			r.hdop = ubloxGps.getPDOP();
+			r.hdop = ubloxGNSS.getPDOP();
 			break;
 		}
 		case SENSOR_GPS_SATNUM:
 		{
 			// Satellites
 			r.satellitesValid = true;
-			r.satellites = ubloxGps.getSIV();
+			r.satellites = ubloxGNSS.getSIV();
 			break;
 		}
 		default:
@@ -2183,127 +2195,10 @@ bool NEOM8UGPS::getReading(SensorType whichSensor, GpsReadings &r)
 	return true;
 }
 
-bool NEOM8UGPS::update()
+bool SFUBLOXGNSS::update()
 {
-	ubloxGps.checkUblox();
-	return ubloxGps.getPVT();
-}
-
-bool SAMM8QGPS::start()
-{
-	if (!I2Cdetect(&auxWire, deviceAddress)) return false;
-
-	if (!ubloxGps.begin(auxWire)) return false;
-
-	ubloxGps.setUART1Output(0); 		// Disable the UART1 port output 
-	ubloxGps.setUART2Output(0); 		// Disable Set the UART2 port output
-	ubloxGps.setI2COutput(COM_TYPE_UBX); 	// Set the I2C port to output UBX only (turn off NMEA noise)
-  ubloxGps.powerSaveMode(false));   // Disable power saving mode
-	ubloxGps.setNavigationFrequency(4);
-	ubloxGps.setAutoPVT(true); 		// Tell the GPS to "send" each solution
-	ubloxGps.saveConfiguration(); 		// Save the current settings to flash and BBR
-
-	return true;
-}
-
-bool SAMM8QGPS::stop()
-{
-	// Turn on power saving mode (low power)
-  // For implementation example see:
-  // https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/64ba65029c6d8400f8b0bdb976c3f36888c74d18/examples/Example18_PowerSaveMode/Example18_PowerSaveMode.ino
-  if (ubloxGps.powerSaveMode())
-    return true;
-  else
-    return false;
-};
-
-bool SAMM8QGPS::getReading(SensorType whichSensor, GpsReadings &r)
-{
-	if (!I2Cdetect(&auxWire, deviceAddress)) return false;
-
-	switch(whichSensor) {
-
-		case SENSOR_GPS_FIX_QUALITY:
-    {
-
-			// Time
-			if (ubloxGps.getDateValid() && ubloxGps.getTimeValid()) {
-				// Time (epoch) -> uint32 - 4
-				struct tm tm; 					// http://www.nongnu.org/avr-libc/user-manual/structtm.html
-				tm.tm_isdst = -1; 				// -1 means no data available
-				tm.tm_yday = 0;
-				tm.tm_wday = 0;
-				tm.tm_year = ubloxGps.getYear() - 1900; 	// tm struct expects years since 1900
-				tm.tm_mon = ubloxGps.getMonth() - 1; 		// tm struct uses 0-11 months
-				tm.tm_mday = ubloxGps.getDay();
-				tm.tm_hour = ubloxGps.getHour();
-				tm.tm_min = ubloxGps.getMinute();
-				tm.tm_sec = ubloxGps.getSecond();
-				r.timeValid = true;
-				r.epochTime = mktime(&tm);
-			} else {
-				r.timeValid = false;
-			}
-
-			uint8_t fixQual = ubloxGps.getFixType(); 		// Type of fix: 0=no, 3=3D, 4=GNSS+Deadreckoning */
-			// TODO
-			// Translate fix quality to NMEA standard
-			r.fixQuality = fixQual;
-			break;
-
-		}
-		case SENSOR_GPS_LATITUDE:
-		case SENSOR_GPS_LONGITUDE:
-		{
-			// Location
-			r.locationValid = true;
-			// Latitude
-			r.latitude = (float)ubloxGps.getLatitude() / 10000000.0;
-			// Longitude
-			r.longitude = (float)ubloxGps.getLongitude() / 10000000.0;
-			break;
-    }
-		case  SENSOR_GPS_ALTITUDE:
-    {
-			// Altitude
-			// TODO check if main sea level option (getAltitudeMSL()) is better for us
-			r.altitudeValid = true;
-			r.altitude = (float)ubloxGps.getAltitude() / 1000.0;
-			break;
-		}
-		case SENSOR_GPS_SPEED:
-    {
-			// Speed
-			r.speedValid = true;
-			r.speed = (float)ubloxGps.getGroundSpeed() / 1000.0;
-			break;
-		}
-		case SENSOR_GPS_HDOP:
-		{
-			// Horizontal dilution of position
-			r.hdopValid = true;
-			r.hdop = ubloxGps.getPDOP();
-			break;
-		}
-		case SENSOR_GPS_SATNUM:
-		{
-			// Satellites
-			r.satellitesValid = true;
-			r.satellites = ubloxGps.getSIV();
-			break;
-		}
-		default:
-			break;
-  }
-	lastReading = millis();
-
-	// TODO use power save mode between readings if posible
-}
-
-bool SAMM8QGPS::update()
-{
-	ubloxGps.checkUblox();
-	return ubloxGps.getPVT();
+	ubloxGNSS.checkUblox();
+	return ubloxGNSS.getPVT();
 }
 
 bool Sck_DallasTemp::start()
