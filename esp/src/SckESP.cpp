@@ -308,6 +308,9 @@ bool SckESP::mqttConnect()
 	if (MQTTclient.connected()) return true;
 
 	debugOUT(F("Connecting to MQTT server..."));
+	debugOUT(F("Cyrille test of MQTT client"));
+	//debugOUT(config.mqtt.server);
+	//debugOUT(config.mqtt.port);
 
 	MQTTclient.setServer(config.mqtt.server, config.mqtt.port);
 

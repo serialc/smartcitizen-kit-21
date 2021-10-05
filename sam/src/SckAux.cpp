@@ -2078,12 +2078,17 @@ bool SFUBLOXGNSS::start()
 
 	if (!I2Cdetect(&auxWire, deviceAddress)) return false;
 
-  SerialUSB.println("UBLOX GNSS start");
-
 	if (!ubloxGNSS.begin(auxWire)) return false;
 
 	ubloxGNSS.setUART1Output(0); 		// Disable the UART1 port output 
 	ubloxGNSS.setUART2Output(0); 		// Disable the UART2 port output
+
+  // wake from sleep
+  if (ubloxGNSS.powerSaveMode(false)) { // Defaults to true
+    SerialUSB.println("Power Save Mode disabled.");
+  } else {
+    SerialUSB.println("*** Power Save disabling FAILED ***");
+  }
 
 	ubloxGNSS.setI2COutput(COM_TYPE_UBX); 	// Set the I2C port to output UBX only (turn off NMEA noise)
 	ubloxGNSS.setNavigationFrequency(4);  // number of measurements per second
@@ -2095,12 +2100,20 @@ bool SFUBLOXGNSS::start()
 
 bool SFUBLOXGNSS::stop()
 {
-  SerialUSB.println("UBLOX GNSS stop");
 
-	// TODO
-  // For implementation example see:
-  // https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/64ba65029c6d8400f8b0bdb976c3f36888c74d18/examples/Example18_PowerSaveMode/Example18_PowerSaveMode.ino
+  // Should go low power or turn off?
+  // For implementation examples see:
 	// Lowpower mode
+  // https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/64ba65029c6d8400f8b0bdb976c3f36888c74d18/examples/Example18_PowerSaveMode/Example18_PowerSaveMode.ino
+  // Turn off
+  // https://github.com/sparkfun/SparkFun_u-blox_GNSS_Arduino_Library/blob/64ba65029c6d8400f8b0bdb976c3f36888c74d18/examples/Example22_PowerOff/Example22_PowerOff.ino
+
+  if (ubloxGNSS.powerSaveMode()) { // Defaults to true
+    SerialUSB.println("Power Save Mode enabled.");
+  } else {
+    SerialUSB.println("*** Power Save Mode FAILED ***");
+  }
+
 	return true;
 }
 

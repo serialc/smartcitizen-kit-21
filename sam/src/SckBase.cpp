@@ -1276,6 +1276,10 @@ void SckBase::goToSleep(uint32_t sleepPeriod)
 	digitalWrite(pinESP_RX_WIFI, LOW);
 	digitalWrite(pinESP_TX_WIFI, LOW);
 
+  // cut power to AUX
+	//digitalWrite(pinPOWER_AUX_WIRE, HIGH);
+  // Causes problems! GNSS repeatedly turns off/on without getting signal
+
 	// Stop PM sensor
 	if (urban.sck_pm.started) urban.sck_pm.stop();
 
@@ -1522,7 +1526,13 @@ void SckBase::sleepLoop()
 		if (sensors[SENSOR_GROVE_OLED].enabled) auxBoards.updateDisplay(this, true);
 
 		now = rtc.getEpoch();
+
 	}
+
+  // enable power to AUX
+  //digitalWrite(pinPOWER_AUX_WIRE, LOW);
+  // Causes problems! GNSS repeatedly turns off/on without getting signal
+
 }
 
 // **** Sensors
