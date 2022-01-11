@@ -229,7 +229,6 @@ bool AuxBoards::stop(SensorType whichSensor)
 	return false;
 }
 
-<<<<<<< HEAD
 void AuxBoards::getReading(SckBase *base, OneSensor *whichSensor)
 {
 	whichSensor->state = 0;
