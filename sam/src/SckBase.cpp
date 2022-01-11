@@ -1279,9 +1279,12 @@ void SckBase::goToSleep(uint32_t sleepPeriod)
 	digitalWrite(pinESP_RX_WIFI, LOW);
 	digitalWrite(pinESP_TX_WIFI, LOW);
 
-  // cut power to AUX
+    // cut power to AUX
 	//digitalWrite(pinPOWER_AUX_WIRE, HIGH);
-  // Causes problems! GNSS repeatedly turns off/on without getting signal
+    // Causes problems! GNSS repeatedly turns off/on without getting signal
+
+    // set GNSS to low powermode
+    if (sensors[SENSOR_GPS_FIX_QUALITY].enabled) auxBoards.stop(SENSOR_GPS_FIX_QUALITY);
 
 	// Stop PM sensor
 	if (urban.sck_pm.started) urban.sck_pm.stop();
@@ -1330,6 +1333,7 @@ void SckBase::goToSleep(uint32_t sleepPeriod)
 	REG_GCLK_GENCTRL = GCLK_GENCTRL_ID(4);  // Select GCLK4
 	while (GCLK->STATUS.bit.SYNCBUSY);
 }
+
 void SckBase::updatePower()
 {
 	charger.detectUSB(this);
@@ -1532,9 +1536,14 @@ void SckBase::sleepLoop()
 
 	}
 
-  // enable power to AUX
-  //digitalWrite(pinPOWER_AUX_WIRE, LOW);
-  // Causes problems! GNSS repeatedly turns off/on without getting signal
+    // enable power to AUX
+    //digitalWrite(pinPOWER_AUX_WIRE, LOW);
+    // Causes problems! GNSS repeatedly turns off/on without getting signal
+  
+    // Start GNSS (to normal powermode)
+	if (sensors[SENSOR_GPS_FIX_QUALITY].enabled) auxBoards.start(this, SENSOR_GPS_FIX_QUALITY);
+    // May need to call alternative method to wake rather than restart...
+    // see: https://forum.smartcitizen.me/t/power-off-qwiic-on-sck2-1-power-off/1623/12?u=cyrille.mdc
 
 }
 
