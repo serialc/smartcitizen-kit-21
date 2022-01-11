@@ -15,6 +15,7 @@ PMsensor		pmSensorB = PMsensor(SLOT_B);
 PM_DallasTemp 		pmDallasTemp;
 Sck_DallasTemp 		dallasTemp;
 Sck_SHT31 		sht31 = Sck_SHT31(&auxWire);
+Sck_SHT31 		sht35 = Sck_SHT31(&auxWire, 0x45);
 Sck_Range 		range;
 Sck_BME680 		bme680;
 Sck_GPS 		gps;
@@ -96,6 +97,8 @@ bool AuxBoards::start(SckBase *base, SensorType whichSensor)
 			if (sht31.start() && !gasBoard.start()) return true;
 			else return false;
 			break;
+		case SENSOR_SHT35_TEMP:
+		case SENSOR_SHT35_HUM: 			return sht35.start(); break;
 		case SENSOR_RANGE_DISTANCE: 		return range.start(); break;
 		case SENSOR_RANGE_LIGHT: 		return range.start(); break;
 		case SENSOR_BME680_TEMPERATURE:		return bme680.start(); break;
@@ -185,6 +188,8 @@ bool AuxBoards::stop(SensorType whichSensor)
 		case SENSOR_DALLAS_TEMP: 		return dallasTemp.stop(); break;
 		case SENSOR_SHT31_TEMP:
 		case SENSOR_SHT31_HUM: 			return sht31.stop(); break;
+		case SENSOR_SHT35_TEMP:
+		case SENSOR_SHT35_HUM: 			return sht35.stop(); break;
 		case SENSOR_RANGE_DISTANCE: 		return range.stop(); break;
 		case SENSOR_RANGE_LIGHT: 		return range.stop(); break;
 		case SENSOR_BME680_TEMPERATURE:		return bme680.stop(); break;
@@ -224,6 +229,7 @@ bool AuxBoards::stop(SensorType whichSensor)
 	return false;
 }
 
+<<<<<<< HEAD
 void AuxBoards::getReading(SckBase *base, OneSensor *whichSensor)
 {
 	whichSensor->state = 0;
@@ -276,6 +282,8 @@ void AuxBoards::getReading(SckBase *base, OneSensor *whichSensor)
 		case SENSOR_DALLAS_TEMP: 		if (dallasTemp.getReading()) 			{ whichSensor->reading = String(dallasTemp.reading); return; } break;
 		case SENSOR_SHT31_TEMP: 		if (sht31.getReading()) 				{ whichSensor->reading = String(sht31.temperature); return; } break;
 		case SENSOR_SHT31_HUM: 			if (sht31.getReading()) 				{ whichSensor->reading = String(sht31.humidity); return; } break;
+		case SENSOR_SHT35_TEMP: 		if (sht35.getReading()) 				{ whichSensor->reading = String(sht35.temperature); return; } break;
+		case SENSOR_SHT35_HUM: 			if (sht35.getReading()) 				{ whichSensor->reading = String(sht35.humidity); return; } break;
 		case SENSOR_RANGE_DISTANCE: 		if (range.getReading(SENSOR_RANGE_DISTANCE)) 	{ whichSensor->reading = String(range.readingDistance); return; } break;
 		case SENSOR_RANGE_LIGHT: 		if (range.getReading(SENSOR_RANGE_LIGHT)) 	{ whichSensor->reading = String(range.readingLight); return; } break;
 		case SENSOR_BME680_TEMPERATURE:		if (bme680.getReading()) 			{ whichSensor->reading = String(bme680.temperature); return; } break;
@@ -406,8 +414,7 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 			break;
 
-		}
-		case SENSOR_ATLAS_PH:
+		} case SENSOR_ATLAS_PH:
 		case SENSOR_ATLAS_EC:
 		case SENSOR_ATLAS_EC_TDS:
 		case SENSOR_ATLAS_EC_SAL:
@@ -514,13 +521,12 @@ String AuxBoards::control(SensorType whichSensor, String command)
 			else return F("Unrecognized command!! please try again...");
 			break;
 
-		}
-		case SENSOR_ADS1X15_48_0:
+		} case SENSOR_ADS1X15_48_0:
 		case SENSOR_ADS1X15_48_1:
 		case SENSOR_ADS1X15_48_2:
-		case SENSOR_ADS1X15_48_3:{
-		  	#ifdef adsTest
-		  	if (command.startsWith("test")) {
+		case SENSOR_ADS1X15_48_3: {
+#ifdef adsTest
+			if (command.startsWith("test")) {
 				command.replace("test", "");
 				command.trim();
 
@@ -551,15 +557,14 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 				return F("\nCurrent set!");
 			}
-			#endif
+#endif
 			break;
-		  }
-		  case SENSOR_ADS1X15_49_0:
-		  case SENSOR_ADS1X15_49_1:
-		  case SENSOR_ADS1X15_49_2:
-		  case SENSOR_ADS1X15_49_3:{
-		  	#ifdef adsTest
-		  	if (command.startsWith("test")) {
+		} case SENSOR_ADS1X15_49_0:
+		case SENSOR_ADS1X15_49_1:
+		case SENSOR_ADS1X15_49_2:
+		case SENSOR_ADS1X15_49_3: {
+#ifdef adsTest
+			if (command.startsWith("test")) {
 				command.replace("test", "");
 				command.trim();
 
@@ -590,16 +595,14 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 				return F("\nCurrent set!");
 			}
-			#endif
+#endif
 			break;
-		  }
-		  case SENSOR_ADS1X15_4A_0:
-		  case SENSOR_ADS1X15_4A_1:
-		  case SENSOR_ADS1X15_4A_2:
-		  case SENSOR_ADS1X15_4A_3:
-		  {
-		  	#ifdef adsTest
-		  	if (command.startsWith("test")) {
+		} case SENSOR_ADS1X15_4A_0:
+		case SENSOR_ADS1X15_4A_1:
+		case SENSOR_ADS1X15_4A_2:
+		case SENSOR_ADS1X15_4A_3: {
+#ifdef adsTest
+			if (command.startsWith("test")) {
 				command.replace("test", "");
 				command.trim();
 
@@ -630,15 +633,14 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 				return F("\nCurrent set!");
 			}
-			#endif
+#endif
 			break;
-		  }
-		  case SENSOR_ADS1X15_4B_0:
-		  case SENSOR_ADS1X15_4B_1:
-		  case SENSOR_ADS1X15_4B_2:
-		  case SENSOR_ADS1X15_4B_3: {
-		  	#ifdef adsTest
-		  	if (command.startsWith("test")) {
+		} case SENSOR_ADS1X15_4B_0:
+		case SENSOR_ADS1X15_4B_1:
+		case SENSOR_ADS1X15_4B_2:
+		case SENSOR_ADS1X15_4B_3: {
+#ifdef adsTest
+			if (command.startsWith("test")) {
 				command.replace("test", "");
 				command.trim();
 
@@ -669,7 +671,7 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 				return F("\nCurrent set!");
 			}
-			#endif
+#endif
 			break;
 		}
 		case SENSOR_SCD30_CO2:
@@ -683,11 +685,11 @@ String AuxBoards::control(SensorType whichSensor, String command)
 
 				uint16_t newInterval = command.toInt();
 				scd30.interval(newInterval);
-				
+
 				return String F("Measuring Interval: ") + String(scd30.interval());
 
 			} else if (command.startsWith("autocal")) {
-				
+
 				command.replace("autocal", "");
 				command.trim();
 
@@ -706,17 +708,18 @@ String AuxBoards::control(SensorType whichSensor, String command)
 				return String F("Forced Recalibration Factor: ") + String(scd30.forcedRecalFactor(newFactor));
 
 			} else if (command.startsWith("caltemp")) {
-				
+
 				command.replace("caltemp", "");
 				command.trim();
 
-				float userTemp = NULL;
+				float userTemp;
 				bool off = false;
 
 				if (command.startsWith("off")) off = true;
 				else {
 
-					if (command.length() > 0) userTemp = command.toFloat();
+					if (command.length() > 0 && isDigit(command.charAt(0))) userTemp = command.toFloat();
+					else return F("Wrong temperature value, try again.");
 				}
 
 				scd30.getReading(SENSOR_SCD30_TEMP);
@@ -1311,7 +1314,7 @@ bool WaterTemp_DS18B20::stop()
 float WaterTemp_DS18B20::getReading()
 {
 
- 	while (!DS_bridge.wireSearch(addr)) {
+	while (!DS_bridge.wireSearch(addr)) {
 
 		DS_bridge.wireResetSearch();
 		DS_bridge.wireReset();
@@ -1997,7 +2000,7 @@ bool XA111GPS::getReading(SensorType whichSensor, GpsReadings &r)
 	//  Only ask for readings if last one is older than
 	if (millis() - lastReading < 500) return true;
 
-	// TODO 
+	// TODO
 	// this was moved to update funtion, check if it works OK
 	/* while (i2cGps.available()) tinyGps.encode(i2cGps.read()); */
 
@@ -2488,14 +2491,14 @@ bool Sck_SCD30::start(SckBase *base, SensorType whichSensor)
 
 	// Ambient pressure compensation
 	OneSensor *pressureSensor = &base->sensors[SENSOR_PRESSURE];
-	
+
 	if (pressureSensor->enabled && base->getReading(pressureSensor)) {
 		float pressureReading = pressureSensor->reading.toFloat();
 		uint16_t pressureInMillibar = pressureReading * 10;
 
 		if (pressureInMillibar > 700 && pressureInMillibar < 1200) {
 			if (sparkfun_scd30.setAmbientPressure(pressureInMillibar)) {
-				pressureCompensated = true;				
+				pressureCompensated = true;
 			}
 		}
 	}
@@ -2568,7 +2571,7 @@ bool Sck_SCD30::autoSelfCal(int8_t value)
 	// Value: 0 -> disable, 1 -> enable, any other -> get current setting
 
 	if (value == 1)	sparkfun_scd30.setAutoSelfCalibration(true);
-	else if (value == 0) sparkfun_scd30.setAutoSelfCalibration(false);	
+	else if (value == 0) sparkfun_scd30.setAutoSelfCalibration(false);
 
 	return sparkfun_scd30.getAutoSelfCalibration();
 }
@@ -2589,7 +2592,7 @@ uint16_t Sck_SCD30::forcedRecalFactor(uint16_t newFactor)
 
 float Sck_SCD30::tempOffset(float userTemp, bool off)
 {
-	// We expect from user the REAL temperature measured during calibration 
+	// We expect from user the REAL temperature measured during calibration
 	// We calculate the difference against the sensor measured temperature to set the correct offset. Please wait for sensor to stabilize temperatures before aplying an offset.
 	// Temperature offset should always be positive (the sensor is generating heat)
 
@@ -2598,7 +2601,7 @@ float Sck_SCD30::tempOffset(float userTemp, bool off)
 
 	getReading(SENSOR_SCD30_TEMP);
 
-	if (userTemp != NULL && temperature > userTemp) sparkfun_scd30.setTemperatureOffset(temperature - userTemp);
+	if (temperature > userTemp) sparkfun_scd30.setTemperatureOffset(temperature - userTemp);
 	else if (off) sparkfun_scd30.setTemperatureOffset(0);
 
 	sparkfun_scd30.getTemperatureOffset(&currentOffsetTemp);

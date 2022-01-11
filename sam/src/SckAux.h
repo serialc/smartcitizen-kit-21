@@ -158,6 +158,8 @@ class AuxBoards
 
 			0x44,			// SENSOR_SHT31_TEMP,
 			0x44,			// SENSOR_SHT31_HUM,
+			0x45,			// SENSOR_SHT35_TEMP,
+			0x45,			// SENSOR_SHT35_HUM,
 
 			0x29,			// SENSOR_RANGE_LIGHT,
 			0x29,			// SENSOR_RANGE_DISTANCE,
@@ -699,7 +701,7 @@ class Sck_SCD30
 		uint16_t interval(uint16_t newInterval=0);
 		bool autoSelfCal(int8_t value=-1);
 		uint16_t forcedRecalFactor(uint16_t newFactor=0);
-		float tempOffset(float userTemp=NULL, bool off=false);
+		float tempOffset(float userTemp, bool off=false);
 
 		uint16_t co2 = 0;
 		float temperature = 0;
